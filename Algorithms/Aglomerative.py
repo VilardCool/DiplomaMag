@@ -1,15 +1,11 @@
 import numpy as np
-from multiprocessing import Pool
-from skimage.io import imread, imsave
 import math
-from itertools import repeat
 
 def find_closest_centroids(X, centroids):
     m = len(X)
-    c = [0]*len(X)
+    c = [0]*m
 
     for i in range(m):
-        # Find distances
         distances = []
         distance = 0
         for j in range(len(centroids)):
@@ -18,7 +14,6 @@ def find_closest_centroids(X, centroids):
             distances.append(distance)
             distance = 0
 
-        # Assign closest cluster to c[i]
         c[i] = distances.index(min(distances))
     
     return c
@@ -81,16 +76,7 @@ def change_centroid(mat, colors, a, b):
         row.append(math.dist(colors[i], centroid))
     mat.append(row)
 
-def find_colors(colors):
-    mat = dist_mat(colors)
-
-    while len(mat)>2:
-        a, b = get_min(mat)
-        change_centroid(mat, colors, a, b)
-
-    return colors
-
-def fin_colors(colors, amount):
+def linkage(colors, amount):
     mat = dist_mat(colors)
 
     while len(mat)>amount:
@@ -99,11 +85,30 @@ def fin_colors(colors, amount):
 
     return colors
 
-def CentroidLinkage(img, colors):
-    # Indexes for color for each pixel
-    idx = find_closest_centroids(img, colors)
+def reduce(colors, amount_fin, amount, box):
+    result = []
 
-    # Reconstruct the image
+    if (amount * len(colors) / box <= amount_fin * box):
+        amount = amount_fin
+        box = amount + amount // 2 + 1
+
+    for i in range(len(colors) // box):
+        part = box
+        if len(colors) - box * i < box:
+            part = len(colors) - box * i
+
+        resu = linkage(colors[box * i: box*i + part], amount)
+        for k in range(len(resu)): result.append(resu[k])
+
+    if (len(result) > amount_fin): result = reduce(result, amount_fin, amount, box)
+
+    return result
+
+def CentroidLinkage(img, colors):
+    w,h,d = img.shape
+
+    idx = find_closest_centroids(img.reshape(w*h, d), colors)
+
     res = []
     for i in range(len(idx)):
         for k in range(len(colors)):
@@ -117,45 +122,39 @@ def CentroidLinkage(img, colors):
 
     return recolored_img
 
-if __name__ == "__main__":
-
-    photo_name = "input/test.jpg"
-    img = imread(photo_name)
-
-    w,h,d = img.shape
+def Aglomerative(img, colNum):
+    w, h, d = img.shape
     img = img/255
 
-    with Pool() as pool:
-      dist = pool.map(color_sort, img)
+    colorsR = set()
+    colorsG = set()
+    colorsB = set()
+    for row in img:
+        for pixel in row:
+            if (pixel[0] >= pixel[1] and pixel[0] >= pixel[2]):
+                colorsR.add(tuple(pixel))
+            elif (pixel[1] >= pixel[0] and pixel[1] >= pixel[2]):
+                colorsG.add(tuple(pixel))
+            else: colorsB.add(tuple(pixel))
 
-    colors = []
-    amount = len(dist)*len(dist[0])
-    while len(colors) < amount:
-        least = 100
-        for i in range(len(dist)):
-            if dist[i] and dist[i][0][0] < least:
-                num = i
-                least = dist[i][0][0]
+    colorsR = color_sort(colorsR)
+    colorsG = color_sort(colorsG)
+    colorsB = color_sort(colorsB)
 
-        colors.append(dist[num][0][1])
-        dist[num].pop(0)
+    colorsA = []
+    colorsA.extend(colorsR)
+    colorsA.extend(colorsG)
+    colorsA.extend(colorsB)
 
-    box_size = 300
-    grouped_colors = [colors[box_size*i:box_size*(i+1)] for i in range((len(colors)//box_size)-1)]
-    grouped_colors.append(colors[box_size*(len(colors)//box_size):])
+    colors=[]
+    for color in colorsA:
+        colors.append(color[1])
 
-    with Pool() as pool:
-      colors = pool.map(find_colors, grouped_colors)
-
-    fin_color = []
-    for row in colors:
-        fin_color.append(row[0])
-        fin_color.append(row[1])
+    amount = 2
+    box = 4
     
-    colors = fin_colors(fin_color, 20)
-
-    img = img.reshape(w*h, d)
+    colors = reduce(colors, colNum, amount, box)
 
     img = CentroidLinkage(img, colors)
 
-    imsave("out.jpg", img)
+    return img

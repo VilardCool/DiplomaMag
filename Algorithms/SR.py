@@ -5,7 +5,6 @@ from keras.layers import Conv2D
 from keras.optimizers import Adam
 import cv2
 import numpy as np
-from skimage.io import imsave
 
 def model():
     SRCNN = Sequential()
@@ -29,7 +28,7 @@ def shave(image, border):
 
 def predict(image_path):
     srcnn = model()
-    srcnn.load_weights('trained.h5')
+    srcnn.load_weights('Algorithms/trained.h5')
 
     degraded = cv2.imread(image_path)
 
@@ -55,6 +54,7 @@ def predict(image_path):
 
     return output
 
-output = predict('images/a.png')
+def SRCNN():
+    output = predict('input.png')
 
-imsave('outputSR.png', cv2.cvtColor(output, cv2.COLOR_BGR2RGB))
+    return cv2.cvtColor(output, cv2.COLOR_BGR2RGB)
