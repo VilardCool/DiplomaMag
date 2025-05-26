@@ -24,7 +24,7 @@
   },
   "contributors": [],
   "scripts": {
-    "start": "nodemon --env-file .env ."
+    "start": "node server"
   },
   "dependencies": {
     "express": "^5.1.0",

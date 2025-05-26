@@ -6,7 +6,7 @@ import fs from 'fs'
 import { spawn } from 'child_process'
 import { spawnSync } from 'child_process'
 
-const port = 3000
+const port = process.env.PORT || 3000
 
 const app = express()
 const server = createServer(app)
@@ -21,31 +21,96 @@ app.get('/', (req, res) => {
   });
 
 io.on('connection', (socket) => {
-  socket.on("image", (img) => {
+  socket.on("UQ", ({img, UQ_r}) => {
     const buffer = Buffer.from(img);
-    fs.writeFileSync('img.png', buffer)
-    fs.writeFileSync('Algorithms/input.png', buffer)
+    fs.writeFileSync('input.png', buffer)
 
-    const imgReturn = fs.readFileSync('img.png')
-    socket.emit('hello', imgReturn)
-
-    PythonAlgorithm()
+    PythonAlgorithm("UQ", UQ_r)
 
     const imgOutput = fs.readFileSync('output.png')
-    socket.emit('hello', imgOutput)
-  }); 
+    socket.emit('result', imgOutput)
+  })
+
+  socket.on("MC", ({img, MC_d}) => {
+    const buffer = Buffer.from(img);
+    fs.writeFileSync('input.png', buffer)
+
+    PythonAlgorithm("MC", MC_d)
+
+    const imgOutput = fs.readFileSync('output.png')
+    socket.emit('result', imgOutput)
+  })
+
+  socket.on("KM", ({img, KM_c, KM_i}) => {
+    const buffer = Buffer.from(img);
+    fs.writeFileSync('input.png', buffer)
+
+    PythonAlgorithm("KM", KM_c, KM_i)
+
+    const imgOutput = fs.readFileSync('output.png')
+    socket.emit('result', imgOutput)
+  })
+
+  socket.on("VQ", ({img, VQ_c, VQ_e, VQ_w, VQ_h}) => {
+    const buffer = Buffer.from(img);
+    fs.writeFileSync('input.png', buffer)
+
+    PythonAlgorithm("VQ", VQ_c, VQ_e, VQ_w, VQ_h)
+
+    const imgOutput = fs.readFileSync('output.png')
+    socket.emit('result', imgOutput)
+  })
+
+  socket.on("OCT", ({img, OCT_p}) => {
+    const buffer = Buffer.from(img);
+    fs.writeFileSync('input.png', buffer)
+
+    PythonAlgorithm("OCT", OCT_p)
+
+    const imgOutput = fs.readFileSync('output.png')
+    socket.emit('result', imgOutput)
+  })
+
+  socket.on("AC", ({img, AC_c}) => {
+    const buffer = Buffer.from(img);
+    fs.writeFileSync('input.png', buffer)
+
+    PythonAlgorithm("AC", AC_c)
+
+    const imgOutput = fs.readFileSync('output.png')
+    socket.emit('result', imgOutput)
+  })
+
+  socket.on("PM", ({img, PM_c}) => {
+    const buffer = Buffer.from(img);
+    fs.writeFileSync('input.png', buffer)
+
+    PythonAlgorithm("PM", PM_c)
+
+    const imgOutput = fs.readFileSync('output.png')
+    socket.emit('result', imgOutput)
+  })
+
+  socket.on("SRCNN", ({img}) => {
+    const buffer = Buffer.from(img);
+    fs.writeFileSync('input.png', buffer)
+
+    PythonAlgorithm("SRCNN")
+
+    const imgOutput = fs.readFileSync('output.png')
+    socket.emit('result', imgOutput)
+  })
 })
 
-function PythonAlgorithm(){
-  // Path to your Python script 
+function PythonAlgorithm(type, par1, par2, par3, par4){
   const pythonScript = 'Algorithms/Main.py';
 
-  // Dynamic value from Node.js
-  const dynamicValue = '0';
-
-  // Spawn a child process
-  const pythonProcess = spawnSync('python', [pythonScript, dynamicValue, '4', '5']);
-
+  const pythonProcess = spawnSync('python', [pythonScript, type, par1, par2, par3, par4], {
+    cwd: process.cwd(),
+    env: process.env,
+    stdio: 'pipe',
+    encoding: 'utf-8'
+  });
 }
 
 server.listen(port)
